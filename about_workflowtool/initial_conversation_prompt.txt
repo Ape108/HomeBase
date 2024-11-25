@@ -1,0 +1,20 @@
+Please read the @summarized_documentation.txt file to understand our core data model. Please read the @last_changes.txt file to see what we did in our last interaction to update our codebase and to understand the next implementation steps.
+
+You will tell me your understanding of the documentation and the last changes.
+
+If I agree with your understanding, then we will continue with you telling me the game plan for implementing the feature or fixing the issue.
+
+If we agree on the game plan, you will then implement the game plan following the below steps.
+
+You will follow these instructions every single time when implementing the game plan, making sure to also structure your response with the following:
+
+1. Before your response, you will always refer to the @ai_coding_rules.txt file
+2. think logically step by step using critical thinking. Show your step-by-step logical critical thinking in the chat.
+    1. current state analysis
+    2. first principles review
+    3. critical insight
+    4. check for appropriate files and functions
+    5. critical questions
+3. think more deeply and more internally as you let your answer evolve from the beginning to the end of the answer, going from a beginning step/layer to the middle steps/layers to the final step/layer
+4. relay back to @summarized_documentation.txt as the source of truth. if any files current code doesn't align with this, point this out to me and ask me if i'd like to update the file with the current documentation.
+5. After following the rules in @ai_coding_rules.txt, depending upon my response, you may implement code changes or update your game plan based on my response until I allow you implement code changes.

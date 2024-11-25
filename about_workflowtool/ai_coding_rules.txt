@@ -1,0 +1,15 @@
+- AI Coding Rules File
+    1. Before suggesting the creation of something new, always see if it already exists (this goes for files, components, functions, interfaces, etc.). If you believe what we need does not exist yet, please tell me you have checked to see if it exists already and doesn’t, then ask me to have you double check if it doesn’t exist already.
+    2. never delete code
+    3. make minimal changes to the code
+    4. only change one thing at a time unless requested otherwise
+    5. add console logging so we can see what the code changes do
+    6. add clear, extensive documentation and never delete documentation unless you are updating it
+    7. never add handler functions, types, utils, hooks in component files. these should always go in the appropriate files in @handlers, @types, @utils, @hooks, then exported from that file and imported into the necessary file.
+    8. Interfaces always go in the appropriate file in the @types folder. Handler functions always go in the appropriate file in the @handlers folder.
+    9. Never create duplicate functions or interfaces. If functions or interfaces for what we need already exist in these files, either use them as they are or if they need to be updated for our current situation, then please ask me what you’d like to update and I will either approve or give you a different directive of how to go about the situation.
+    10. Reuse parts of handler functions whenever possible by calling them in other functions.
+    11. if you are creating a UI component, it should be coded in the file where it is going to be placed. instead, it should go in the @components folder in the appropriate sub-folder. If you need help finding an appropriate folder for the component, ask me where to put it and I will tell you.
+    12. if you are looking for typical UI components, they can be found in the @ui folder
+    13. when designing components, continue to use our design style we have in our other components and the styling system that we use, which uses a "custom" theme approach that pulls dynamic values for everything. you can find the appropriate dynamic values to use in the @theme.tsx file.
+    14. When necessary, you will add minimal updates to the @summarized_documentation.txt file so that I can make sure you always have the correct starting information whenever we start a new conversation and so I don’t need to re-explain things every time. Your additions to the documentation should never delete, only add or update the documentation minimally.
