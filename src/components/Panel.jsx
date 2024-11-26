@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { handleAuth, getAvailableAccounts, openFilePicker } from '@/services/googleApi';
-import { GripVertical, Pencil, Eye } from "lucide-react";
+import { GripVertical, Pencil, Eye, ZoomIn, ZoomOut, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
 
 // Create context for managing dropdowns
 const DropdownContext = createContext();
@@ -25,15 +25,16 @@ export function DropdownProvider({ children }) {
 
 export function Panel({ 
   type, 
-  layout, 
+  layout,
   previewLayout,
   onPositionChange, 
   onDragStart,
   onDragEnd,
   onDragOver,
-  className 
+  className,
+  style,
+  isDragging
 }) {
-  const [isDragging, setIsDragging] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [documentData, setDocumentData] = useState(null);
   const [dragStart, setDragStart] = useState(null);
@@ -46,6 +47,9 @@ export function Panel({
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [mouseDown, setMouseDown] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [showPanControls, setShowPanControls] = useState(false);
 
   useEffect(() => {
     const availableAccounts = getAvailableAccounts();
@@ -143,6 +147,7 @@ export function Panel({
         x: e.clientX,
         y: e.clientY
       });
+      onDragStart(e, type);
     }
   };
 
@@ -305,13 +310,61 @@ export function Panel({
     setIsEditMode(!isEditMode);
   };
 
+  // Add zoom handlers
+  const handleZoomIn = (e) => {
+    e.stopPropagation();
+    const newZoom = Math.min(zoom + 0.25, 3);
+    setZoom(newZoom);
+  };
+
+  const handleZoomOut = (e) => {
+    e.stopPropagation();
+    const newZoom = Math.max(zoom - 0.25, 0.5);
+    setZoom(newZoom);
+  };
+
+  const handleResetZoom = (e) => {
+    e.stopPropagation();
+    setZoom(1);
+    setPanPosition({ x: 0, y: 0 });
+  };
+
+  // Add pan handlers
+  const handlePan = (direction, e) => {
+    e.stopPropagation();
+    const panAmount = 100;
+    
+    switch(direction) {
+      case 'up':
+        setPanPosition(prev => ({ ...prev, y: prev.y + panAmount }));
+        break;
+      case 'down':
+        setPanPosition(prev => ({ ...prev, y: prev.y - panAmount }));
+        break;
+      case 'left':
+        setPanPosition(prev => ({ ...prev, x: prev.x + panAmount }));
+        break;
+      case 'right':
+        setPanPosition(prev => ({ ...prev, x: prev.x - panAmount }));
+        break;
+    }
+  };
+
+  // Show/hide pan controls based on zoom level
+  useEffect(() => {
+    setShowPanControls(zoom > 1);
+    if (zoom === 1) {
+      setPanPosition({ x: 0, y: 0 });
+    }
+  }, [zoom]);
+
   return (
     <div
       ref={panelRef}
-      style={getPositionStyles()}
+      style={style || getPositionStyles()}
       className={`absolute ${className}`}
     >
-      <Card className={`w-full h-full relative ${isDragging ? 'border-[3px] border-primary/70 shadow-md' : 'border-2 border-dashed border-muted-foreground/70'}`}>
+      <Card className={`w-full h-full relative ${isDragging ? 'border-4 border-primary shadow-lg scale-105' : 'border-2 border-dashed border-muted-foreground'}`}>
         <div 
           className={`drag-handle absolute top-2 left-2 p-2 rounded-full bg-background/80 
             text-muted-foreground z-50 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
@@ -322,8 +375,44 @@ export function Panel({
 
         <div className="w-full h-full">
           {documentData ? (
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full overflow-hidden rounded-lg">
+              <div 
+                style={{
+                  transform: `scale(${zoom}) translate(${panPosition.x / zoom}px, ${panPosition.y / zoom}px)`,
+                  transformOrigin: 'center',
+                  transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                  width: '100%',
+                  height: '100%',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0
+                }}
+              >
+                <iframe 
+                  src={isEditMode ? documentData.editLink : documentData.thumbnailLink}
+                  title={documentData.name}
+                  className={`w-full h-full border-0 bg-accent/[0.03] rounded-lg ${isDragging ? 'pointer-events-none' : ''}`}
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation allow-top-navigation allow-modals"
+                  allowFullScreen={true}
+                />
+              </div>
+
+              {/* Add zoom controls */}
               <div className="absolute top-2 right-2 z-10 flex gap-2">
+                <div className="flex items-center gap-1 bg-background/80 rounded-full px-2">
+                  <button onClick={handleZoomOut} className="p-2 rounded-full hover:bg-background/95">
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm text-muted-foreground w-12 text-center">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button onClick={handleZoomIn} className="p-2 rounded-full hover:bg-background/95">
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                  <button onClick={handleResetZoom} className="p-2 rounded-full hover:bg-background/95">
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </div>
                 <button
                   onClick={toggleEditMode}
                   className="p-2 rounded-full bg-background/80 hover:bg-background/95 
@@ -343,27 +432,51 @@ export function Panel({
                   ×
                 </button>
               </div>
-              <div className="w-full h-full">
-                <iframe 
-                  src={isEditMode ? documentData.editLink : documentData.thumbnailLink}
-                  title={documentData.name}
-                  className={`w-full h-full border-0 bg-accent/[0.03] rounded-lg ${isDragging ? 'pointer-events-none' : ''}`}
-                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation allow-top-navigation allow-modals"
-                  allowFullScreen={true}
-                />
-                <div 
-                  className="absolute bottom-0 left-0 right-0 p-4 
-                    bg-gradient-to-t from-background/95 via-background/50 to-transparent"
-                >
-                  <p 
-                    className="font-medium text-lg truncate cursor-pointer"
-                    onClick={handleDocumentClick}
-                  >
-                    {documentData.name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Click name to open document</p>
-                </div>
-              </div>
+
+              {/* Add pan controls */}
+              {showPanControls && (
+                <>
+                  {/* Center vertical controls */}
+                  <div className="absolute left-1/2 top-2 -translate-x-1/2 z-20">
+                    <button
+                      onClick={(e) => handlePan('up', e)}
+                      className="p-2 rounded-full bg-background/80 hover:bg-background/95 
+                        transition-colors duration-200 text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="absolute left-1/2 bottom-2 -translate-x-1/2 z-20">
+                    <button
+                      onClick={(e) => handlePan('down', e)}
+                      className="p-2 rounded-full bg-background/80 hover:bg-background/95 
+                        transition-colors duration-200 text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Center horizontal controls */}
+                  <div className="absolute top-1/2 left-2 -translate-y-1/2 z-20">
+                    <button
+                      onClick={(e) => handlePan('left', e)}
+                      className="p-2 rounded-full bg-background/80 hover:bg-background/95 
+                        transition-colors duration-200 text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="absolute top-1/2 right-2 -translate-y-1/2 z-20">
+                    <button
+                      onClick={(e) => handlePan('right', e)}
+                      className="p-2 rounded-full bg-background/80 hover:bg-background/95 
+                        transition-colors duration-200 text-muted-foreground hover:text-foreground"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -377,7 +490,7 @@ export function Panel({
                   >
                     <div>
                       <span className="text-4xl mb-2 block">+</span>
-                      <p>Link {type.charAt(0).toUpperCase() + type.slice(1)}</p>
+                      <p>Link Document</p>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
