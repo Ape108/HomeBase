@@ -58,6 +58,15 @@ export function Sidebar() {
               <ExternalLink className="w-4 h-4" />
               Terms of Service
             </a>
+            <a 
+              href="/legal/readme.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-2 py-1 hover:bg-slate-800 rounded text-sm text-slate-300 hover:text-white"
+            >
+              <ExternalLink className="w-4 h-4" />
+              README
+            </a>
           </div>
         </div>
       </div>
