@@ -3,16 +3,11 @@ const API_KEY = process.env.GOOGLE_API_KEY;
 const DISCOVERY_DOCS = [
     'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
 ];
-const SCOPES = [
-    'https://www.googleapis.com/auth/drive.file',
-    'https://www.googleapis.com/auth/drive.readonly',
-    'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/drive.metadata.readonly',
-    'https://www.googleapis.com/auth/drive.metadata',
-    'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/drive.appdata',
-    'https://www.googleapis.com/auth/drive.photos.readonly'
+const OAUTH_SCOPES = [
+    'https://www.googleapis.com/auth/drive.file',       // Only access files the user explicitly selects
+    'https://www.googleapis.com/auth/userinfo.email',   // Just to identify the user account
+    'https://www.googleapis.com/auth/userinfo.profile', // Just for the user's name
+    'https://www.googleapis.com/auth/drive.metadata.readonly' // Required for file metadata
 ].join(' ');
 
 // Add token persistence
@@ -148,7 +143,7 @@ const getUserInfo = async (accessToken) => {
         const newToken = await new Promise((resolve) => {
           const tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
-            scope: SCOPES,
+            scope: OAUTH_SCOPES,
             callback: (response) => {
               if (response.access_token) {
                 resolve(response.access_token);
@@ -281,7 +276,7 @@ export const initGoogleApi = async () => {
         hasApiKey: !!API_KEY,
         clientIdLength: CLIENT_ID?.length,
         apiKeyLength: API_KEY?.length,
-        scopesConfigured: SCOPES,
+        scopesConfigured: OAUTH_SCOPES,
         discoveryDocs: DISCOVERY_DOCS,
         origin: window.location.origin
     });
@@ -329,7 +324,7 @@ export const handleAuth = async (isNewAccount = false) => {
         return new Promise((resolve, reject) => {
             const tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
-                scope: SCOPES,
+                scope: OAUTH_SCOPES,
                 callback: async (tokenResponse) => {
                     console.log('Token response received:', {
                         hasError: !!tokenResponse.error,
@@ -453,6 +448,7 @@ export const openFilePicker = async (panelType, accountEmail) => {
                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  // Word docs
                         'application/pdf'  // PDFs
                     ].join(','))
+                    .setMode('READ_WRITE')  // Add this line to ensure read/write access
                 )
                 .setOAuthToken(account.token)
                 .setDeveloperKey(API_KEY)
@@ -462,11 +458,13 @@ export const openFilePicker = async (panelType, accountEmail) => {
                         console.log('Document picked:', doc);
                         
                         try {
+                            console.log('Fetching document details...');
                             const response = await gapi.client.drive.files.get({
                                 fileId: doc.id,
                                 fields: '*',
                                 supportsAllDrives: true
                             });
+                            console.log('Document details response:', response);
 
                             // Handle preview URL based on mime type
                             let previewUrl;
@@ -475,13 +473,13 @@ export const openFilePicker = async (panelType, accountEmail) => {
 
                             if (mimeType === 'application/pdf') {
                                 previewUrl = `https://drive.google.com/file/d/${doc.id}/preview`;
-                                editUrl = previewUrl;  // PDFs can't be edited
+                                editUrl = previewUrl;
                             } else if (mimeType === 'application/vnd.google-apps.document') {
                                 previewUrl = `https://docs.google.com/document/d/${doc.id}/preview`;
-                                editUrl = `https://docs.google.com/document/d/${doc.id}/edit?usp=sharing`;  // Full edit URL
+                                editUrl = `https://docs.google.com/document/d/${doc.id}/edit?usp=sharing`;
                             } else if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
                                 previewUrl = `https://drive.google.com/file/d/${doc.id}/preview`;
-                                editUrl = `https://docs.google.com/document/d/${doc.id}/edit?usp=sharing`;  // Convert and edit
+                                editUrl = `https://docs.google.com/document/d/${doc.id}/edit?usp=sharing`;
                             }
                             
                             const docData = {
@@ -494,7 +492,7 @@ export const openFilePicker = async (panelType, accountEmail) => {
                                 exportLinks: response.result.exportLinks
                             };
                             
-                            console.log('Document data retrieved:', docData);
+                            console.log('Resolving with document data:', docData);
                             resolve(docData);
                         } catch (error) {
                             console.error('Error fetching document details:', error);
@@ -505,8 +503,6 @@ export const openFilePicker = async (panelType, accountEmail) => {
                         resolve(null);
                     }
                 })
-                .enableFeature(google.picker.Feature.NAV_HIDDEN)
-                .enableFeature(google.picker.Feature.MINE_ONLY)
                 .build();
 
             picker.setVisible(true);
