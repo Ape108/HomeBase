@@ -30,6 +30,8 @@ const useWorkspaces = () => {
   return { workspaces, addWorkspace }
 }
 
+const FREE_VERSION = true // We can control this with an environment variable later
+
 export function Sidebar() {
   const { isLoggedIn, login, logout } = useAuth()
   const { workspaces, addWorkspace } = useWorkspaces()
@@ -38,6 +40,8 @@ export function Sidebar() {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      if (FREE_VERSION) return // Early return in free version
+      
       if (sidebarRef.current) {
         const sidebarWidth = 256 // w-64
         const triggerZone = 40
@@ -55,6 +59,11 @@ export function Sidebar() {
       document.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])
+
+  // Return null in free version
+  if (FREE_VERSION) {
+    return null
+  }
 
   return (
     <aside 
