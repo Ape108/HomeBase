@@ -2,3 +2,5 @@
 .env.local
 .DS_Store
 node_modules/ 
+about_workflowtool/conversation_last.txt
+about_workflowtool/conversation_current.txt

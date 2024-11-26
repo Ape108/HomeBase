@@ -358,6 +358,17 @@ export function Panel({
     }
   }, [zoom]);
 
+  // In the Panel component, add a check to prevent reloading
+  const handlePositionChange = (newPosition) => {
+    if (documentData) {
+      // If we already have document data, just update position
+      onPositionChange(type, newPosition);
+    } else {
+      // Only reload document if we don't have one
+      handleDocumentLoad();
+    }
+  };
+
   return (
     <div
       ref={panelRef}
