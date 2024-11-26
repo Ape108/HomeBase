@@ -3,6 +3,12 @@ import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
 
+// First define the constants
+const PANEL_DIMENSIONS = {
+  LEFT: { width: '60%', height: '100%' },
+  RIGHT: { width: '40%', height: '50%' }
+};
+
 export default function App() {
   const [isGapiLoaded, setIsGapiLoaded] = useState(false);
   const [error, setError] = useState(null);
@@ -10,9 +16,9 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [currentLayoutIndex, setCurrentLayoutIndex] = useState(0);
   const [layout, setLayout] = useState({
-    essay: { position: 'left', width: '60%', height: '100%' },
-    outline: { position: 'right-top', width: '40%', height: '48%' },
-    resources: { position: 'right-bottom', width: '40%', height: '48%' }
+    essay: { position: 'left', ...PANEL_DIMENSIONS.LEFT },
+    outline: { position: 'right-top', ...PANEL_DIMENSIONS.RIGHT },
+    resources: { position: 'right-bottom', ...PANEL_DIMENSIONS.RIGHT }
   });
   const [dropTarget, setDropTarget] = useState(null);
   const [previewLayout, setPreviewLayout] = useState(null);
@@ -44,37 +50,19 @@ export default function App() {
     // }
   };
 
-  // Update Panel component to handle positions
-  const getPanelStyles = (position, width) => {
-    const styles = {
-      position: 'absolute',
-      width,
-      transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)',
-    };
-
-    switch (position) {
-      case 'left':
-        return { ...styles, left: '0', top: '0', height: '100%' };
-      case 'right':
-        return { ...styles, right: '0', top: '0', height: '100%' };
-      case 'right-top':
-        return { ...styles, right: '0', top: '0', height: '48%' };
-      case 'right-bottom':
-        return { ...styles, right: '0', bottom: '0', height: '48%' };
-      case 'left-top':
-        return { ...styles, left: '0', top: '0', height: '48%' };
-      case 'left-bottom':
-        return { ...styles, left: '0', bottom: '0', height: '48%' };
-      case 'left-column':
-        return { ...styles, left: '0', top: '0', height: '100%' };
-      case 'center-column':
-        return { ...styles, left: '33.333%', top: '0', height: '100%' };
-      case 'right-column':
-        return { ...styles, right: '0', top: '0', height: '100%' };
-      default:
-        return styles;
-    }
-  };
+  // Simplify getPanelStyles to only handle position
+  const getPanelStyles = (position, width) => ({
+    position: 'absolute',
+    width: position === 'left' ? PANEL_DIMENSIONS.LEFT.width : PANEL_DIMENSIONS.RIGHT.width,
+    height: position === 'left' ? PANEL_DIMENSIONS.LEFT.height : PANEL_DIMENSIONS.RIGHT.height,
+    ...(position === 'left' 
+      ? { left: '0', top: '0' }
+      : position === 'right-top'
+      ? { right: '0', top: '0' }
+      : { right: '0', bottom: '0' }
+    ),
+    transition: position === 'left' ? 'none' : 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+  });
 
   // Update layout order to only use DEFAULT
   const layoutOrder = [LAYOUTS.DEFAULT]; // Removed other layouts
@@ -108,16 +96,48 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.altKey) {
-        console.log('Alt key pressed:', e.key);
+        console.log('🎹 Keydown:', e.key, 'Alt:', e.altKey);
+        
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          console.log('🔄 Swapping right panels');
+          
+          // Swap right panels vertically
+          setPanelContents(prev => {
+            const topContent = prev['right-top'];
+            const bottomContent = prev['right-bottom'];
+            
+            return {
+              ...prev,
+              'right-top': bottomContent,
+              'right-bottom': topContent
+            };
+          });
+
+          // Update layout while maintaining widths
+          setLayout(prev => {
+            const topPanel = Object.entries(prev).find(([_, value]) => value.position === 'right-top')?.[0];
+            const bottomPanel = Object.entries(prev).find(([_, value]) => value.position === 'right-bottom')?.[0];
+            
+            if (topPanel && bottomPanel) {
+              return {
+                ...prev,
+                [topPanel]: { ...prev[topPanel], position: 'right-bottom' },
+                [bottomPanel]: { ...prev[bottomPanel], position: 'right-top' }
+              };
+            }
+            return prev;
+          });
+        }
         
         if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
           e.preventDefault();
           
+          // Cycle all panels
           setPanelContents(prev => {
             const positions = ['left', 'right-top', 'right-bottom'];
             let assignments = positions.map(pos => prev[pos]);
             
-            // Rotate assignments
             if (e.key === 'ArrowLeft') {
               const [first, ...rest] = assignments;
               assignments = [...rest, first];
@@ -126,63 +146,33 @@ export default function App() {
               assignments = [last, ...assignments];
             }
             
-            // Create new assignments without reloading documents
-            const newAssignments = positions.reduce((acc, pos, i) => ({
+            return positions.reduce((acc, pos, i) => ({
               ...acc,
               [pos]: assignments[i]
             }), {});
+          });
 
-            // Update layout positions without changing document data
-            const newLayout = {...layout};
-            positions.forEach((pos, i) => {
-              const type = assignments[i];
-              newLayout[type] = {
-                ...newLayout[type],
-                position: pos,
-                width: pos === 'left' ? '60%' : '40%',
-                height: pos === 'left' ? '100%' : '48%'
-              };
-            });
-            setLayout(newLayout);
-            
-            return newAssignments;
-          });
-        }
-        
-        // Add vertical rotation for right panels
-        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-          e.preventDefault();
-          
-          setPanelContents(prev => {
-            // Only swap right-top and right-bottom
-            const topContent = prev['right-top'];
-            const bottomContent = prev['right-bottom'];
-            
-            // Create new assignments
-            return {
-              ...prev,
-              'right-top': bottomContent,
-              'right-bottom': topContent
-            };
-          });
-          
-          // Update layout positions
+          // Update layout while maintaining widths
           setLayout(prev => {
             const newLayout = { ...prev };
-            const topPanel = Object.entries(newLayout).find(([_, value]) => value.position === 'right-top')[0];
-            const bottomPanel = Object.entries(newLayout).find(([_, value]) => value.position === 'right-bottom')[0];
-            
-            // Swap positions
-            newLayout[topPanel] = {
-              ...newLayout[topPanel],
-              position: 'right-bottom'
-            };
-            
-            newLayout[bottomPanel] = {
-              ...newLayout[bottomPanel],
-              position: 'right-top'
-            };
-            
+            Object.keys(prev).forEach(key => {
+              const currentPos = prev[key].position;
+              let newPos;
+              
+              if (e.key === 'ArrowLeft') {
+                newPos = currentPos === 'left' ? 'right-bottom' :
+                        currentPos === 'right-top' ? 'left' : 'right-top';
+              } else {
+                newPos = currentPos === 'left' ? 'right-top' :
+                        currentPos === 'right-top' ? 'right-bottom' : 'left';
+              }
+              
+              newLayout[key] = {
+                ...prev[key],
+                position: newPos,
+                width: prev[key].width // Maintain original width
+              };
+            });
             return newLayout;
           });
         }
@@ -191,7 +181,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [layout]);
+  }, []);
 
   const handleDragOver = (position, draggedType) => {
     setDropTarget(position);
@@ -206,70 +196,61 @@ export default function App() {
     
     if (panelInTargetPosition) {
       const [swapType, swapLayout] = panelInTargetPosition;
-      // Swap positions
+      // Maintain original widths when swapping
       newPreviewLayout[swapType] = {
         ...swapLayout,
         position: layout[draggedType].position,
-        width: layout[draggedType].width,
-        isMoving: true,
-        transform: 'none' // Reset transform for non-dragged panel
+        width: layout[swapType].width, // Keep original width
+        isMoving: true
       };
     }
     
-    // Update dragged panel position with cursor position
+    // Update dragged panel position while maintaining its width
     newPreviewLayout[draggedType] = {
       ...layout[draggedType],
       position: position,
-      width: position === 'left' ? '60%' : '40%',
+      width: layout[draggedType].width, // Keep original width
       isMoving: true,
-      transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`, // Add cursor position
-      zIndex: 50 // Keep dragged panel on top
+      transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`,
+      zIndex: 50
     };
     
     setPreviewLayout(newPreviewLayout);
   };
 
-  const handlePanelMove = (type, newPosition) => {
-    // Find panel currently in target position
-    const panelInTargetPosition = Object.entries(layout).find(
-      ([key, value]) => value.position === newPosition
-    );
-    
-    // Create new layout
-    const newLayout = { ...layout };
-    
-    if (panelInTargetPosition) {
-      const [swapType] = panelInTargetPosition;
-      const currentTypePosition = layout[type].position;
-      
-      // Swap positions while maintaining correct widths
-      newLayout[swapType] = {
-        ...layout[swapType],
-        position: currentTypePosition,
-        width: currentTypePosition === 'left' ? '60%' : '40%',
-        height: currentTypePosition === 'left' ? '100%' : '48%'
-      };
-      
-      newLayout[type] = {
-        ...layout[type],
-        position: newPosition,
-        width: newPosition === 'left' ? '60%' : '40%',
-        height: newPosition === 'left' ? '100%' : '48%'
-      };
+  const handlePanelMove = (draggedType, targetPosition) => {
+    const swapType = Object.entries(layout).find(
+      ([_, value]) => value.position === targetPosition
+    )?.[0];
 
-      // Update panel contents
+    if (swapType) {
+      setLayout(prev => ({
+        ...prev,
+        [draggedType]: {
+          ...prev[draggedType],
+          position: targetPosition,
+          width: targetPosition === 'left' ? PANEL_DIMENSIONS.LEFT.width : PANEL_DIMENSIONS.RIGHT.width,
+          height: targetPosition === 'left' ? PANEL_DIMENSIONS.LEFT.height : PANEL_DIMENSIONS.RIGHT.height
+        },
+        [swapType]: {
+          ...prev[swapType],
+          position: prev[draggedType].position,
+          width: prev[draggedType].position === 'left' ? PANEL_DIMENSIONS.LEFT.width : PANEL_DIMENSIONS.RIGHT.width,
+          height: prev[draggedType].position === 'left' ? PANEL_DIMENSIONS.LEFT.height : PANEL_DIMENSIONS.RIGHT.height
+        }
+      }));
+
       setPanelContents(prev => {
         const newContents = { ...prev };
-        // Swap the contents
-        newContents[currentTypePosition] = swapType;
-        newContents[newPosition] = type;
+        Object.keys(prev).forEach(pos => {
+          if (prev[pos] === draggedType) {
+            newContents[targetPosition] = draggedType;
+            newContents[pos] = prev[targetPosition];
+          }
+        });
         return newContents;
       });
     }
-    
-    setLayout(newLayout);
-    setPreviewLayout(null);
-    setDropTarget(null);
   };
 
   const handleMouseDown = (e, type) => {
@@ -372,7 +353,7 @@ export default function App() {
         <div className="flex-1">
           <div className={`relative min-h-screen bg-background p-8 ${isDragging ? 'select-none cursor-grabbing' : ''}`}>
             <div className="relative h-[calc(100vh-4rem)] gap-8">
-              {/* Dynamic Drop zone indicators */}
+              {/* Dynamic Drop zone indicators - only show when dragging */}
               {isDragging && (
                 <>
                   {Object.entries(layout).map(([panelType, panelLayout]) => {
@@ -382,22 +363,17 @@ export default function App() {
                     return (
                       <div 
                         key={panelType}
-                        className={`absolute border-4 rounded-lg z-30
-                          transition-all duration-200 ease-in-out`}
+                        className="absolute border-4 rounded-lg z-30 transition-colors duration-200"
                         style={{
                           ...getPanelStyles(panelLayout.position, panelLayout.width),
                           ...(dropTarget === panelLayout.position ? {
                             borderColor: 'hsl(var(--primary))',
                             backgroundColor: 'hsl(var(--primary) / 0.2)',
-                            transform: 'scale(1.02)'
+                            opacity: 1
                           } : {
                             borderColor: 'hsl(var(--primary) / 0.4)',
                             backgroundColor: 'hsl(var(--primary) / 0.05)',
-                            ':hover': {
-                              borderColor: 'hsl(var(--primary) / 0.6)',
-                              backgroundColor: 'hsl(var(--primary) / 0.1)',
-                              transform: 'scale(1.01)'
-                            }
+                            opacity: 0.7
                           })
                         }}
                       />
@@ -409,6 +385,8 @@ export default function App() {
               {/* Panels */}
               {['left', 'right-top', 'right-bottom'].map(position => {
                 const type = panelContents[position];
+                const isLeftPanel = position === 'left';
+                
                 return (
                   <Panel 
                     key={type}
@@ -416,15 +394,16 @@ export default function App() {
                     style={{
                       ...getPanelStyles(position, layout[type].width),
                       ...(isDragging && draggedPanel === type ? {
-                        transform: `translate(${dragPosition.x}px, ${dragPosition.y}px) scale(1.05)`,
-                        zIndex: 100, // Increased z-index for dragged panel
+                        transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`,
+                        zIndex: 100,
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                         transition: 'none',
                         cursor: 'grabbing',
-                        pointerEvents: 'none' // Prevent panel from interfering with drop zones
+                        pointerEvents: 'none'
                       } : {
-                        zIndex: 20, // Base z-index for panels
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        zIndex: isLeftPanel ? 10 : 20,
+                        // Only add transitions for right panels
+                        transition: isLeftPanel ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                       })
                     }}
                     layout={layout[type]}
@@ -432,11 +411,7 @@ export default function App() {
                     onDragStart={(e) => handleMouseDown(e, type)}
                     onDragEnd={handleMouseUp}
                     onDragOver={(position) => handleDragOver(position, type)}
-                    className={`absolute ${
-                      isDragging && draggedPanel === type
-                        ? 'will-change-transform' 
-                        : 'transition-all duration-300 ease-in-out'
-                    }`}
+                    className={isDragging && draggedPanel === type ? 'will-change-transform' : ''}
                     isDragging={isDragging && draggedPanel === type}
                     setIsDragging={setIsDragging}
                   />

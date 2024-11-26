@@ -10,6 +10,12 @@ A React-based workspace for managing Google Docs documents, designed specificall
 - Live document preview and editing
 - Support for Google Docs, Word documents, and PDFs
 - Dark mode interface
+- Panel controls:
+  - Zoom in/out with visual indicator
+  - Pan controls for zoomed documents
+  - Toggle between read/write modes
+  - Open in new tab
+  - Keyboard shortcuts for panel management (Alt + Arrow keys)
 
 ## Prerequisites
 
@@ -17,6 +23,10 @@ A React-based workspace for managing Google Docs documents, designed specificall
 - npm or yarn
 - Google Cloud Platform account with Drive API enabled
 - Google OAuth 2.0 credentials
+
+## Dependencies
+
+- luc
 
 ## Setup
 

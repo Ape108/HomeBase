@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { handleAuth, getAvailableAccounts, openFilePicker } from '@/services/googleApi';
-import { GripVertical, Pencil, Eye, ZoomIn, ZoomOut, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
+import { GripVertical, Pencil, Eye, ZoomIn, ZoomOut, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
 
 // Create context for managing dropdowns
 const DropdownContext = createContext();
@@ -432,6 +432,15 @@ export function Panel({
                   title={isEditMode ? "View mode" : "Edit mode"}
                 >
                   {isEditMode ? <Eye className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => window.open(documentData.editLink, '_blank')}
+                  className="p-2 rounded-full bg-background/80 hover:bg-background/95 
+                    transition-colors duration-200 text-muted-foreground 
+                    hover:text-foreground"
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="w-4 h-4" />
                 </button>
                 <button
                   className="p-2 rounded-full bg-background/80 hover:bg-background/95 

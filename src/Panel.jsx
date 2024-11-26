@@ -1,74 +1,64 @@
-export function Panel({ 
-  type, 
-  layout,
-  previewLayout,
-  onPositionChange, 
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  className,
-  style,
-  isDragging
-}) {
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [documentData, setDocumentData] = useState(null);
-  const [mouseDown, setMouseDown] = useState(false);
-  const [dragStart, setDragStart] = useState(null);
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-  const [targetPosition, setTargetPosition] = useState(null);
+// Add memo to prevent unnecessary re-renders
+const MemoizedIframe = React.memo(({ src, title, className }) => (
+  <iframe 
+    src={src}
+    title={title}
+    className={className}
+    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation allow-top-navigation allow-modals"
+    allowFullScreen={true}
+  />
+));
 
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.drag-handle')) {
-      e.preventDefault();
-      setMouseDown(true);
-      setDragStart({
-        x: e.clientX,
-        y: e.clientY
-      });
-      onDragStart(e);
-    }
-  };
+// Add useMemo for expensive calculations
+const positionStyles = useMemo(() => getPositionStyles(), [layout, isDragging, dragPosition]);
 
-  useEffect(() => {
-    const handleGlobalMouseMove = (e) => {
-      if (!mouseDown || !dragStart) return;
+// Add useCallback for event handlers
+const handleMouseDown = useCallback((e) => {
+  if (e.target.closest('.drag-handle')) {
+    e.preventDefault();
+    setMouseDown(true);
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY
+    });
+    onDragStart(e, type);
+  }
+}, [onDragStart, type]);
 
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-      setDragPosition({ x: deltaX, y: deltaY });
+// In the Panel component
+const [iframeLoaded, setIframeLoaded] = useState(false);
 
-      // Determine new position
-      const screenX = e.clientX;
-      const screenY = e.clientY;
-      let newPosition = screenX < window.innerWidth * 0.5 
-        ? 'left' 
-        : screenY < window.innerHeight * 0.5 ? 'right-top' : 'right-bottom';
+// Add this function to handle iframe load
+const handleIframeLoad = () => {
+  setIframeLoaded(true);
+};
 
-      if (newPosition !== targetPosition) {
-        setTargetPosition(newPosition);
-        onDragOver(newPosition);
-      }
-    };
-
-    const handleGlobalMouseUp = () => {
-      if (targetPosition) {
-        onPositionChange(type, targetPosition);
-      }
-      setMouseDown(false);
-      setDragStart(null);
-      setDragPosition({ x: 0, y: 0 });
-      setTargetPosition(null);
-      onDragEnd?.();
-    };
-
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, [mouseDown, dragStart, targetPosition]);
-
-  // ... rest of component code
-} 
+// In the render:
+<div className="relative w-full h-full overflow-hidden rounded-lg">
+  <div 
+    style={{
+      transform: `scale(${zoom}) translate(${panPosition.x / zoom}px, ${panPosition.y / zoom}px)`,
+      transformOrigin: 'center',
+      transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+      width: '100%',
+      height: '100%',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      opacity: iframeLoaded ? 1 : 0, // Add opacity transition
+      transition: 'opacity 0.2s ease-out' // Smooth opacity transition
+    }}
+  >
+    <iframe 
+      src={isEditMode ? documentData.editLink : documentData.thumbnailLink}
+      title={documentData.name}
+      className={`w-full h-full border-0 bg-accent/[0.03] rounded-lg ${isDragging ? 'pointer-events-none' : ''}`}
+      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation allow-top-navigation allow-modals"
+      allowFullScreen={true}
+      onLoad={handleIframeLoad} // Add load handler
+      style={{
+        visibility: iframeLoaded ? 'visible' : 'hidden' // Hide until loaded
+      }}
+    />
+  </div>
+</div> 
