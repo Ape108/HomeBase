@@ -19,8 +19,14 @@ const useAuth = () => {
 }
 
 const useWorkspaces = () => {
-  const [workspaces, setWorkspaces] = useState(['Default Workspace'])
-  const addWorkspace = () => setWorkspaces([...workspaces, `Workspace ${workspaces.length + 1}`])
+  const [workspaces, setWorkspaces] = useState(['Workspace 1'])
+  const addWorkspace = () => {
+    if (workspaces.length >= 20) {
+      console.log('Maximum workspace limit (20) reached')
+      return
+    }
+    setWorkspaces([...workspaces, `Workspace ${workspaces.length + 1}`])
+  }
   return { workspaces, addWorkspace }
 }
 
@@ -70,24 +76,26 @@ export function Sidebar() {
                   </li>
                 ))}
               </ul>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={addWorkspace}
-                      className="w-full bg-slate-800 hover:bg-slate-700 border-slate-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Workspace
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Add new workspace</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              {workspaces.length < 20 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={addWorkspace}
+                        className="w-full bg-slate-800 hover:bg-slate-700 border-slate-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Workspace
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Add new workspace</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </>
           ) : (
             <p className="text-slate-400 text-sm">Log in to view your workspaces</p>

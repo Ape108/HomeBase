@@ -506,11 +506,12 @@ export function Panel({
                     type="button"
                     className="text-center w-40 h-40 rounded-lg 
                       bg-accent/[0.03] hover:bg-accent/[0.07] transition-colors duration-300
-                      flex items-center justify-center select-none cursor-pointer"
+                      flex items-center justify-center select-none cursor-pointer
+                      group"
                   >
                     <div>
-                      <span className="text-4xl mb-2 block">+</span>
-                      <p>Link Document</p>
+                      <span className="text-4xl mb-2 block text-muted-foreground/50 group-hover:text-foreground transition-colors duration-300">+</span>
+                      <p className="text-muted-foreground/50 group-hover:text-foreground transition-colors duration-300">Link Document</p>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
