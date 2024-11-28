@@ -373,7 +373,9 @@ export function Panel({
     <div
       ref={panelRef}
       style={style || getPositionStyles()}
-      className={`absolute ${className}`}
+      className={`absolute ${className} ${
+        documentData && !isDragging ? (isTransitioning ? 'panel-exit' : 'panel-enter') : ''
+      } panel-${layout.position}`}
     >
       <Card className={`w-full h-full relative ${isDragging ? 'border-4 border-primary shadow-lg scale-105' : 'border-2 border-dashed border-muted-foreground'}`}>
         <div 

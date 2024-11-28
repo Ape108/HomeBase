@@ -1,13 +1,32 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, LogOut, User } from 'lucide-react'
+import { getAvailableAccounts } from '@/services/googleApi'
 
 const FREE_VERSION = true
 
-export function Sidebar() {
+interface User {
+  picture?: string;
+  name: string;
+  email: string;
+}
+
+interface SidebarProps {
+  onLogout: () => void;
+}
+
+export function Sidebar({ onLogout }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    const accounts = getAvailableAccounts()
+    if (accounts && accounts.length > 0) {
+      setCurrentUser(accounts[0])
+    }
+  }, [])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -69,6 +88,36 @@ export function Sidebar() {
             </a>
           </div>
         </div>
+
+        {currentUser && (
+          <div className="p-4 border-t border-slate-800 mt-auto">
+            <div className="flex items-center gap-3 mb-3">
+              {currentUser.picture ? (
+                <img 
+                  src={currentUser.picture} 
+                  alt={currentUser.name}
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{currentUser.name}</p>
+                <p className="text-sm text-slate-400 truncate">{currentUser.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-300 
+                hover:text-white hover:bg-slate-800 rounded transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   )

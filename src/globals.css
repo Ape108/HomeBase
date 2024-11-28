@@ -57,3 +57,70 @@
     @apply bg-background text-foreground;
   }
 } 
+
+/* Add fade animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+.fade-enter {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.fade-exit {
+  animation: fadeOut 0.4s ease-out forwards;
+} 
+
+/* Panel animations */
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes panelSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(5px) scale(0.99);
+  }
+}
+
+.panel-enter {
+  animation: panelSlideIn 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.panel-exit {
+  animation: panelSlideOut 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+/* Stagger panel animations */
+.panel-left { animation-delay: 0s; }
+.panel-right-top { animation-delay: 0.1s; }
+.panel-right-bottom { animation-delay: 0.2s; } 

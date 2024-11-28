@@ -316,7 +316,19 @@ export const initGoogleApi = async () => {
     }
 };
 
-export const handleAuth = async (isNewAccount = false) => {
+export const handleAuthStateChange = (callback) => {
+  console.log('Setting up auth state change listener')
+  // Check auth state periodically
+  const interval = setInterval(() => {
+    const accounts = getAvailableAccounts()
+    callback(accounts && accounts.length > 0)
+  }, 5000)
+
+  return () => clearInterval(interval)
+}
+
+// Add this function before handleAuth
+const authenticateUser = async (forceNewAccount = false) => {
     console.log('🚀 Starting authentication process...');
     try {
         await waitForLibraries();
@@ -326,11 +338,6 @@ export const handleAuth = async (isNewAccount = false) => {
                 client_id: CLIENT_ID,
                 scope: OAUTH_SCOPES,
                 callback: async (tokenResponse) => {
-                    console.log('Token response received:', {
-                        hasError: !!tokenResponse.error,
-                        hasToken: !!tokenResponse.access_token
-                    });
-
                     if (tokenResponse.error) {
                         reject(tokenResponse.error);
                         return;
@@ -342,39 +349,17 @@ export const handleAuth = async (isNewAccount = false) => {
                     }
 
                     try {
-                        // Set the token for GAPI client
-                        gapi.client.setToken(tokenResponse);
-
-                        // Get user info using fetch instead of gapi.client.request
-                        const userInfoResponse = await fetch(
-                            'https://www.googleapis.com/oauth2/v2/userinfo',
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${tokenResponse.access_token}`
-                                }
-                            }
-                        );
-
-                        if (!userInfoResponse.ok) {
-                            throw new Error(`Failed to get user info: ${userInfoResponse.status}`);
-                        }
-
-                        const userInfo = await userInfoResponse.json();
-                        console.log('User info received:', userInfo);
-
-                        // Store account info with all required fields
+                        // Get user info
+                        const userInfo = await getUserInfo(tokenResponse.access_token);
+                        
+                        // Store account info
                         const accountData = {
                             email: userInfo.email,
-                            name: userInfo.name || userInfo.email.split('@')[0],
+                            name: userInfo.name,
                             picture: userInfo.picture,
                             token: tokenResponse.access_token,
                             expiry: Date.now() + (tokenResponse.expires_in * 1000)
                         };
-
-                        console.log('Storing account data:', {
-                            ...accountData,
-                            token: accountData.token.substring(0, 10) + '...'
-                        });
 
                         // Store in localStorage
                         const accounts = getStoredAccounts();
@@ -387,19 +372,15 @@ export const handleAuth = async (isNewAccount = false) => {
                         }
 
                         localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-                        console.log('Account stored successfully');
-
                         resolve(accountData);
                     } catch (error) {
-                        console.error('Error getting user info:', error);
                         reject(error);
                     }
                 }
             });
 
-            console.log('Requesting access token...');
             tokenClient.requestAccessToken({
-                prompt: isNewAccount ? 'consent' : 'select_account'
+                prompt: forceNewAccount ? 'consent' : ''
             });
         });
     } catch (error) {
@@ -407,6 +388,24 @@ export const handleAuth = async (isNewAccount = false) => {
         throw error;
     }
 };
+
+// Update existing handleAuth function
+export const handleAuth = async (forceNewAccount = false) => {
+  console.log('🚀 Starting authentication process...')
+  
+  try {
+    const result = await authenticateUser(forceNewAccount)
+    console.log('Authentication successful:', result)
+    
+    // Broadcast auth state change
+    window.dispatchEvent(new Event('auth-state-changed'))
+    
+    return result
+  } catch (error) {
+    console.error('Authentication failed:', error)
+    throw error
+  }
+}
 
 // Get available accounts with better filtering
 export const getAvailableAccounts = () => {

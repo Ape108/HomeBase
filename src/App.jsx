@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Panel, DropdownProvider } from '@/components/Panel';
-import { initGoogleApi } from '@/services/googleApi';
+import { initGoogleApi, getAvailableAccounts } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
+import { LoginScreen } from '@/components/auth/LoginScreen.jsx'
+import { LoadingScreen } from '@/components/LoadingScreen/index.jsx'
+import { ErrorScreen } from '@/components/ErrorScreen/index.jsx'
 
 // First define the constants
 const PANEL_DIMENSIONS = {
@@ -13,6 +16,8 @@ export default function App() {
   const [isGapiLoaded, setIsGapiLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [initializationState, setInitializationState] = useState('starting');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [currentLayoutIndex, setCurrentLayoutIndex] = useState(0);
   const [layout, setLayout] = useState({
@@ -30,6 +35,7 @@ export default function App() {
     'right-top': 'outline',
     'right-bottom': 'resources'
   });
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Define preset layouts with exact positioning
   const LAYOUTS = {
@@ -183,6 +189,44 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
+
+  if (error) {
+    return <ErrorScreen error={error} state={initializationState} />;
+  }
+
+  if (!isGapiLoaded) {
+    return <LoadingScreen state={initializationState} />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className={`fade-enter`}>
+        <LoginScreen 
+          onLogin={(user) => {
+            setIsTransitioning(true);
+            // Small delay to allow fade out animation
+            setTimeout(() => {
+              setIsAuthenticated(true);
+              setCurrentUser(user);
+              setIsTransitioning(false);
+            }, 300);
+          }} 
+          isTransitioning={isTransitioning}
+        />
+      </div>
+    );
+  }
+
   const handleDragOver = (position, draggedType) => {
     setDropTarget(position);
     
@@ -307,120 +351,92 @@ export default function App() {
     setDropTarget(null);
   };
 
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging]);
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">
-          <p>Error: {error}</p>
-          <p className="text-sm mt-2">State: {initializationState}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isGapiLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-foreground">
-          <p>Initializing Google API...</p>
-          <p className="text-sm mt-2">State: {initializationState}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <DropdownProvider>
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <div className="flex-1">
-          <div className={`relative min-h-screen bg-background p-8 ${isDragging ? 'select-none cursor-grabbing' : ''}`}>
-            <div className="relative h-[calc(100vh-4rem)] gap-8">
-              {/* Dynamic Drop zone indicators - only show when dragging */}
-              {isDragging && (
-                <>
-                  {Object.entries(layout).map(([panelType, panelLayout]) => {
-                    // Skip the panel being dragged
-                    if (panelType === draggedPanel) return null;
+    <div className={`${isTransitioning ? 'fade-exit' : 'fade-enter'}`}>
+      <DropdownProvider>
+        <div className="flex min-h-screen bg-background">
+          <Sidebar onLogout={() => {
+            console.log('Logging out...')
+            setIsTransitioning(true);
+            localStorage.removeItem('google_accounts')
+            setTimeout(() => {
+              setIsAuthenticated(false)
+              setCurrentUser(null)
+              setIsTransitioning(false);
+            }, 400);
+          }} />
+          <div className="flex-1">
+            <div className={`relative min-h-screen bg-background p-8 ${isDragging ? 'select-none cursor-grabbing' : ''}`}>
+              <div className="relative h-[calc(100vh-4rem)] gap-8">
+                {/* Dynamic Drop zone indicators - only show when dragging */}
+                {isDragging && (
+                  <>
+                    {Object.entries(layout).map(([panelType, panelLayout]) => {
+                      // Skip the panel being dragged
+                      if (panelType === draggedPanel) return null;
+ 
+                      return (
+                        <div 
+                          key={panelType}
+                          className="absolute border-4 rounded-lg z-30 transition-colors duration-200"
+                          style={{
+                            ...getPanelStyles(panelLayout.position, panelLayout.width),
+                            ...(dropTarget === panelLayout.position ? {
+                              borderColor: 'hsl(var(--primary))',
+                              backgroundColor: 'hsl(var(--primary) / 0.2)',
+                              opacity: 1
+                            } : {
+                              borderColor: 'hsl(var(--primary) / 0.4)',
+                              backgroundColor: 'hsl(var(--primary) / 0.05)',
+                              opacity: 0.7
+                            })
+                          }}
+                        />
+                      );
+                    })}
+                  </>
+                )}
 
-                    return (
-                      <div 
-                        key={panelType}
-                        className="absolute border-4 rounded-lg z-30 transition-colors duration-200"
-                        style={{
-                          ...getPanelStyles(panelLayout.position, panelLayout.width),
-                          ...(dropTarget === panelLayout.position ? {
-                            borderColor: 'hsl(var(--primary))',
-                            backgroundColor: 'hsl(var(--primary) / 0.2)',
-                            opacity: 1
-                          } : {
-                            borderColor: 'hsl(var(--primary) / 0.4)',
-                            backgroundColor: 'hsl(var(--primary) / 0.05)',
-                            opacity: 0.7
-                          })
-                        }}
-                      />
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Panels */}
-              {['left', 'right-top', 'right-bottom'].map(position => {
-                const type = panelContents[position];
-                const isLeftPanel = position === 'left';
-                
-                return (
-                  <Panel 
-                    key={type}
-                    type={type}
-                    style={{
-                      ...getPanelStyles(position, layout[type].width),
-                      ...(isDragging && draggedPanel === type ? {
-                        transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`,
-                        zIndex: 100,
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                        transition: 'none',
-                        cursor: 'grabbing',
-                        pointerEvents: 'none'
-                      } : {
-                        zIndex: isLeftPanel ? 10 : 20,
-                        // Only add transitions for right panels
-                        transition: isLeftPanel ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                      })
-                    }}
-                    layout={layout[type]}
-                    onPositionChange={handlePanelMove}
-                    onDragStart={(e) => handleMouseDown(e, type)}
-                    onDragEnd={handleMouseUp}
-                    onDragOver={(position) => handleDragOver(position, type)}
-                    className={isDragging && draggedPanel === type ? 'will-change-transform' : ''}
-                    isDragging={isDragging && draggedPanel === type}
-                    setIsDragging={setIsDragging}
-                  />
-                );
-              })}
+                {/* Panels */}
+                {['left', 'right-top', 'right-bottom'].map(position => {
+                  const type = panelContents[position];
+                  const isLeftPanel = position === 'left';
+                  
+                  return (
+                    <Panel 
+                      key={type}
+                      type={type}
+                      style={{
+                        ...getPanelStyles(position, layout[type].width),
+                        ...(isDragging && draggedPanel === type ? {
+                          transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`,
+                          zIndex: 100,
+                          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                          transition: 'none',
+                          cursor: 'grabbing',
+                          pointerEvents: 'none'
+                        } : {
+                          zIndex: isLeftPanel ? 10 : 20,
+                          transition: isLeftPanel ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        })
+                      }}
+                      layout={layout[type]}
+                      onPositionChange={handlePanelMove}
+                      onDragStart={(e) => handleMouseDown(e, type)}
+                      onDragEnd={handleMouseUp}
+                      onDragOver={(position) => handleDragOver(position, type)}
+                      className={isDragging && draggedPanel === type ? 'will-change-transform' : ''}
+                      isDragging={isDragging && draggedPanel === type}
+                      setIsDragging={setIsDragging}
+                      isTransitioning={isTransitioning}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </DropdownProvider>
+      </DropdownProvider>
+    </div>
   );
 } 
