@@ -1,5 +1,5 @@
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const API_KEY = process.env.GOOGLE_API_KEY;
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const API_KEY = process.env.GOOGLE_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = [
     'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
 ];
@@ -267,53 +267,114 @@ const loadPickerApi = () => {
     });
 };
 
+// Near the top of the file, add this logging
+console.log('Environment variables check on load:', {
+  hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+  clientIdLength: process.env.GOOGLE_CLIENT_ID?.length,
+  hasApiKey: !!process.env.GOOGLE_API_KEY,
+  apiKeyLength: process.env.GOOGLE_API_KEY?.length,
+  nodeEnv: process.env.NODE_ENV,
+  viteMode: import.meta.env.MODE
+});
+
+// Log the values immediately
+console.log('API Credentials on module load:', {
+  clientIdExists: !!CLIENT_ID,
+  apiKeyExists: !!API_KEY
+});
+
+// Enhance the initGoogleApi function
 export const initGoogleApi = async () => {
-    console.log('%c Google API Initialization Started', 'background: #222; color: #bada55');
-    
-    // Validate environment variables and print them partially
-    console.log('Environment Check:', {
-        hasClientId: !!CLIENT_ID,
-        hasApiKey: !!API_KEY,
-        clientIdLength: CLIENT_ID?.length,
-        apiKeyLength: API_KEY?.length,
-        scopesConfigured: OAUTH_SCOPES,
-        discoveryDocs: DISCOVERY_DOCS,
-        origin: window.location.origin
+  console.log('%c Google API Initialization Started', 'background: #222; color: #bada55');
+  
+  // Log more details about environment variables
+  console.log('Detailed environment check:', {
+    clientId: {
+      exists: !!CLIENT_ID,
+      length: CLIENT_ID?.length,
+      firstChars: CLIENT_ID?.substring(0, 5),
+      type: typeof CLIENT_ID
+    },
+    apiKey: {
+      exists: !!API_KEY,
+      length: API_KEY?.length,
+      firstChars: API_KEY?.substring(0, 5),
+      type: typeof API_KEY
+    },
+    envVars: {
+      direct: {
+        clientId: {
+          exists: !!process.env.GOOGLE_CLIENT_ID,
+          length: process.env.GOOGLE_CLIENT_ID?.length
+        },
+        apiKey: {
+          exists: !!process.env.GOOGLE_API_KEY,
+          length: process.env.GOOGLE_API_KEY?.length
+        }
+      },
+      vite: {
+        clientId: {
+          exists: !!import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          length: import.meta.env.VITE_GOOGLE_CLIENT_ID?.length
+        },
+        apiKey: {
+          exists: !!import.meta.env.VITE_GOOGLE_API_KEY,
+          length: import.meta.env.VITE_GOOGLE_API_KEY?.length
+        }
+      }
+    },
+    window: {
+      origin: window.location.origin,
+      hostname: window.location.hostname
+    }
+  });
+  
+  // Add more detailed error handling around the credential check
+  if (!API_KEY || !CLIENT_ID) {
+    console.error('❌ Missing API credentials:', {
+      apiKey: !!API_KEY,
+      clientId: !!CLIENT_ID
     });
+    throw new Error('Google API credentials not found. Check .env file.');
+  }
+  
+  try {
+    // Add progress logging
+    console.log('Waiting for libraries to load...');
+    await waitForLibraries();
+    console.log('Libraries loaded successfully');
 
-    if (!API_KEY || !CLIENT_ID) {
-        throw new Error('Google API credentials not found. Check .env file.');
-    }
-
-    try {
-        await waitForLibraries();
-        console.log('Libraries loaded successfully');
-
-        // Load required GAPI components
-        await new Promise((resolve, reject) => {
-            window.gapi.load('client:picker', {
-                callback: resolve,
-                onerror: reject
-            });
+    // Load required GAPI components
+    await new Promise((resolve, reject) => {
+        window.gapi.load('client:picker', {
+            callback: resolve,
+            onerror: reject
         });
-        console.log('✅ GAPI client and picker loaded');
+    });
+    console.log('✅ GAPI client and picker loaded');
 
-        // Initialize the client
-        await window.gapi.client.init({
-            apiKey: API_KEY,
-            discoveryDocs: DISCOVERY_DOCS,
-        });
-        console.log('✅ GAPI client initialized');
+    // Initialize the client
+    await window.gapi.client.init({
+        apiKey: API_KEY,
+        discoveryDocs: DISCOVERY_DOCS,
+    });
+    console.log('✅ GAPI client initialized');
 
-        // Load Drive API
-        await window.gapi.client.load('drive', 'v3');
-        console.log('✅ Drive API loaded');
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Initialization failed:', error);
-        throw error;
-    }
+    // Load Drive API
+    await window.gapi.client.load('drive', 'v3');
+    console.log('✅ Drive API loaded');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Initialization failed with details:', {
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      apiKeyExists: !!API_KEY,
+      clientIdExists: !!CLIENT_ID
+    });
+    throw error;
+  }
 };
 
 export const handleAuth = async (isNewAccount = false) => {

@@ -1,0 +1,196 @@
+# Essay Workspace Documentation
+
+## Project Overview
+Essay Workspace is a React-based application designed to enhance the essay writing and research process. It provides a flexible workspace with three customizable panels for managing Google Docs documents.
+
+## Core Features
+1. Panel System
+   - Three configurable panels: essay, outline, and resources
+   - Drag-and-drop interface for panel rearrangement
+   - Flexible layout system with positions: left, right-top, right-bottom
+   - Panel width persistence
+
+2. Document Integration
+   - Google Docs integration with read/write capabilities
+   - Support for multiple document types:
+     * Google Docs
+     * Word documents (.docx)
+     * PDFs
+   - Multi-account Google support
+   - Document preview and direct editing
+
+3. Panel Controls
+   - Zoom functionality with visual indicator
+   - Pan controls for zoomed documents
+   - Toggle between read/write modes
+   - Quick external link access
+   - Document unlinking capability
+
+4. Workspace Management
+   - Workspace saving and loading
+   - Panel configuration persistence
+   - User-specific workspaces
+
+## Technical Architecture
+1. Core Components
+   - Panel.jsx: Main panel component with document viewing/editing
+   - App.jsx: Main application layout and state management
+   - WorkspaceMenu.tsx: Workspace management interface
+   - LoginScreen: Dual implementation (.tsx/.jsx) for type safety and flexibility
+
+2. Data Models
+   - Workspace: {id, name, user_id, created_at, updated_at, panels}
+   - Panel: {position, document_id, document_name, document_type, zoom, mode}
+
+3. Services
+   - googleApi.js: Handles Google API integration and document operations
+   - Authentication system for Google account management
+
+4. State Management
+   - Local state for panel operations
+   - Context for dropdown management
+   - Persistent storage for workspaces
+
+## User Interface
+1. Layout System
+   - Fixed panel positions: left (60% width), right-top (40% width), right-bottom (40% width)
+   - Smooth transitions between layouts
+   - Responsive design considerations
+
+2. Visual Features
+   - Dark mode interface
+   - Semi-transparent controls
+   - Loading states and transitions
+   - Drag and drop visual feedback
+
+## Integration Points
+1. Google APIs
+   - Drive API for document access
+   - Picker API for file selection
+   - OAuth for authentication
+
+2. Document Handling
+   - Preview/Edit modes
+   - File type-specific handling
+   - Sandbox security implementation
+
+## Database Architecture
+1. Supabase Integration
+   - PostgreSQL database with Row Level Security
+   - Supabase Auth for user management
+   - Real-time subscription capabilities
+
+2. Core Tables
+   - profiles: {id, email, name, avatar_url}
+   - workspaces: {id, name, user_id, created_at, updated_at}
+   - panels: {id, workspace_id, position, document_id, document_name, document_type, zoom, mode}
+
+3. Security Model
+   - Row Level Security (RLS) enabled on all tables
+   - User-specific access policies
+   - Authentication-based permissions
+   - Secure profile management
+
+4. Data Access Patterns
+   - Workspace service for CRUD operations
+   - Nested queries for workspace-panel relationships
+   - Consistent user ID generation
+   - Error handling and logging
+
+## Environment Configuration
+1. Required Environment Variables
+   - VITE_SUPABASE_URL: Supabase project URL
+   - VITE_SUPABASE_ANON_KEY: Supabase anonymous key
+   - GOOGLE_CLIENT_ID: Google OAuth client ID
+   - GOOGLE_API_KEY: Google API key
+
+2. Google API Configuration
+   - Required OAuth Scopes:
+     * drive.file: For document access
+     * userinfo.email: For account identification
+     * userinfo.profile: For user information
+     * drive.metadata.readonly: For file metadata
+
+## Client-Side Architecture
+1. Component Structure
+   - LoginScreen: Handles user authentication
+   - Sidebar: Navigation and legal links
+   - WorkspaceMenu: Workspace management
+   - Panel: Document viewing and manipulation
+
+2. State Management
+   - Local storage for token persistence
+   - Multi-account handling
+   - Layout state management
+   - Document state tracking
+
+## Error Handling & Logging
+1. Error Management
+   - Authentication error handling
+   - Document access failures
+   - API error responses
+   - Database operation errors
+
+2. Logging System
+   - Console logging for development
+   - User action tracking
+   - Error reporting
+   - Performance monitoring
+
+## Legal & Compliance
+1. Documentation
+   - Privacy Policy
+   - Terms of Service
+   - README documentation
+   - User guidelines
+
+2. Security Measures
+   - Secure iframe implementation
+   - API key protection
+   - User data handling
+   - Document access controls
+
+## Deployment
+1. Vercel Configuration
+   - Production deployment on Vercel platform
+   - Environment variable management
+   - Build and deployment configurations
+
+2. Build Process
+   - Vite-based build system
+   - TypeScript compilation
+   - Asset optimization
+   - Environment-specific builds
+
+WORKSPACE FUNCTIONALITY:
+- Workspaces are managed through the sidebar
+- Each workspace contains:
+  - id: string
+  - name: string
+  - user_id: string
+  - created_at: string
+  - updated_at: string
+  - panels?: Panel[]
+
+- Panel structure:
+  - id?: string
+  - workspace_id?: string
+  - position: string
+  - document_id?: string
+  - document_name?: string
+  - document_type?: string
+  - zoom?: number
+  - mode?: 'read' | 'write'
+  - created_at?: string
+
+- Workspace Management:
+  - Workspaces are stored in Supabase
+  - CRUD operations handled by workspaceService
+  - Workspace state tracked by currentWorkspace in App.tsx
+  - Active workspace is highlighted in sidebar
+  - Workspace controls:
+    - Create: Plus button at top of workspace list
+    - Edit: Pencil button next to workspace name
+    - Delete: Minus button right-aligned on workspace item
+  - No confirmation required for workspace deletion
+  - Workspace list shows most recently modified first
