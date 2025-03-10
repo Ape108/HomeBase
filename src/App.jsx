@@ -444,16 +444,11 @@ export default function App() {
         </div>
       </div>
       <button 
-        className="fixed top-4 right-4 bg-blue-500 text-white p-2 rounded-md" 
-        onClick={() => setShowInfoLinks(!showInfoLinks)}
+        onClick={() => setShowServiceInfo(true)}
+        className="info-button p-2 bg-slate-800 hover:bg-slate-700 rounded text-white"
       >
-        Show Info
+        About & Services
       </button>
-      {showInfoLinks && (
-        <div className="fixed top-16 right-4 z-50">
-          <InfoLinks onClose={() => setShowInfoLinks(false)} />
-        </div>
-      )}
       {showServiceInfo && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000]">
           <div className="relative max-w-md w-full m-4">
