@@ -3,6 +3,7 @@ import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
 import { InfoLinks } from '@/components/InfoLinks';
+import { ServiceInfo } from '@/components/ServiceInfo';
 
 // First define the constants
 const PANEL_DIMENSIONS = {
@@ -32,6 +33,7 @@ export default function App() {
     'right-bottom': 'resources'
   });
   const [showInfoLinks, setShowInfoLinks] = useState(false);
+  const [showServiceInfo, setShowServiceInfo] = useState(false);
 
   // Define preset layouts with exact positioning
   const LAYOUTS = {
@@ -451,6 +453,19 @@ export default function App() {
       {showInfoLinks && (
         <div className="fixed top-16 right-4 z-50">
           <InfoLinks onClose={() => setShowInfoLinks(false)} />
+        </div>
+      )}
+      {showServiceInfo && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000]">
+          <div className="relative max-w-md w-full m-4">
+            <ServiceInfo />
+            <button 
+              onClick={() => setShowServiceInfo(false)}
+              className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 rounded-full p-1"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
     </DropdownProvider>

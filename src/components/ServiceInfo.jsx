@@ -30,7 +30,7 @@ export function ServiceInfo() {
         <Button 
           variant="outline" 
           className="flex items-center justify-center"
-          onClick={() => window.open('YOUR_PORTFOLIO_URL', '_blank')}
+          onClick={() => window.open('https://github.com/Ape108', '_blank')}
         >
           <ExternalLink className="mr-2 h-4 w-4" />
           Visit My Portfolio
@@ -40,7 +40,7 @@ export function ServiceInfo() {
         <Button 
           variant="outline" 
           className="flex items-center justify-center"
-          onClick={() => window.open('YOUR_LINKEDIN_URL', '_blank')}
+          onClick={() => window.open('https://www.linkedin.com/in/cameron-akhtar-8b1226281/', '_blank')}
         >
           <Linkedin className="mr-2 h-4 w-4" />
           Connect on LinkedIn
