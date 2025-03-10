@@ -26,17 +26,17 @@ export function ServiceInfo() {
       </div>
       
       <div className="flex flex-col space-y-2">
-        {/* Portfolio link - you'll add your URL here */}
+        {/* GitHub link */}
         <Button 
           variant="outline" 
           className="flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white"
           onClick={() => window.open('https://github.com/Ape108', '_blank')}
         >
           <ExternalLink className="mr-2 h-4 w-4" />
-          Visit My Portfolio
+          Visit My GitHub
         </Button>
         
-        {/* LinkedIn link - you'll add your URL here */}
+        {/* LinkedIn link */}
         <Button 
           variant="outline" 
           className="flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white"

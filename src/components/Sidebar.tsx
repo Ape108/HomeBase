@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'
-import { ExternalLink, Info } from 'lucide-react'
+import { ExternalLink, Info, Linkedin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const FREE_VERSION = true
@@ -83,6 +83,34 @@ export function Sidebar({ currentLayout, onLayoutChange, showServiceInfo, setSho
             >
               <Info className="h-[1.2rem] w-[1.2rem]" />
             </Button>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-700">
+            <h3 className="text-sm font-medium mb-2 text-slate-300">My Services</h3>
+            <ul className="text-xs text-slate-400 space-y-1 mb-3 pl-2">
+              <li>✓ Custom workflow templates</li>
+              <li>✓ Integration services</li>
+              <li>✓ Team collaboration</li>
+            </ul>
+            
+            <a 
+              href="https://github.com/Ape108" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center text-slate-300 hover:text-white text-sm py-1"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              My GitHub
+            </a>
+            
+            <a 
+              href="https://www.linkedin.com/in/cameron-akhtar-8b1226281/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center text-slate-300 hover:text-white text-sm py-1"
+            >
+              <Linkedin className="mr-2 h-4 w-4" />
+              LinkedIn
+            </a>
           </div>
         </div>
       </div>
