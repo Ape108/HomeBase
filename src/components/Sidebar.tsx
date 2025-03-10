@@ -1,11 +1,19 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Info } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const FREE_VERSION = true
 
-export function Sidebar() {
+interface SidebarProps {
+  currentLayout: any;
+  onLayoutChange: (layout: any) => void;
+  showServiceInfo?: boolean;
+  setShowServiceInfo?: (show: boolean) => void;
+}
+
+export function Sidebar({ currentLayout, onLayoutChange, showServiceInfo, setShowServiceInfo }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
 
@@ -67,6 +75,14 @@ export function Sidebar() {
               <ExternalLink className="w-4 h-4" />
               README
             </a>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowServiceInfo(!showServiceInfo)}
+              title="About & Services"
+            >
+              <Info className="h-[1.2rem] w-[1.2rem]" />
+            </Button>
           </div>
         </div>
       </div>
