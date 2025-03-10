@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
-import { InfoLinks } from '@/components/InfoLinks';
 import { ServiceInfo } from '@/components/ServiceInfo';
 
 // First define the constants
