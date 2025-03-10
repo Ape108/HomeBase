@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
+import { InfoLinks } from '@/components/InfoLinks';
 
 // First define the constants
 const PANEL_DIMENSIONS = {
@@ -30,6 +31,7 @@ export default function App() {
     'right-top': 'outline',
     'right-bottom': 'resources'
   });
+  const [showInfoLinks, setShowInfoLinks] = useState(false);
 
   // Define preset layouts with exact positioning
   const LAYOUTS = {
@@ -440,6 +442,17 @@ export default function App() {
           </div>
         </div>
       </div>
+      <button 
+        className="fixed top-4 right-4 bg-blue-500 text-white p-2 rounded-md" 
+        onClick={() => setShowInfoLinks(!showInfoLinks)}
+      >
+        Show Info
+      </button>
+      {showInfoLinks && (
+        <div className="fixed top-16 right-4 z-50">
+          <InfoLinks onClose={() => setShowInfoLinks(false)} />
+        </div>
+      )}
     </DropdownProvider>
   );
 } 
