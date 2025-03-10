@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
+import { ServiceInfo } from '@/components/ServiceInfo';
 
 // First define the constants
 const PANEL_DIMENSIONS = {
@@ -30,6 +31,7 @@ export default function App() {
     'right-top': 'outline',
     'right-bottom': 'resources'
   });
+  const [showServiceInfo, setShowServiceInfo] = useState(false);
 
   // Define preset layouts with exact positioning
   const LAYOUTS = {
@@ -349,7 +351,12 @@ export default function App() {
   return (
     <DropdownProvider>
       <div className="flex min-h-screen bg-background">
-        <Sidebar />
+        <Sidebar 
+          currentLayout={layoutOrder[currentLayoutIndex]} 
+          onLayoutChange={handleLayoutChange}
+          showServiceInfo={showServiceInfo}
+          setShowServiceInfo={setShowServiceInfo}
+        />
         <div className="flex-1">
           <div className={`relative min-h-screen bg-background p-8 ${isDragging ? 'select-none cursor-grabbing' : ''}`}>
             <div className="relative h-[calc(100vh-4rem)] gap-8">
@@ -421,6 +428,23 @@ export default function App() {
           </div>
         </div>
       </div>
+      {showServiceInfo && (
+        <div 
+          className="fixed right-16 bottom-4 z-50 animate-in slide-in-from-right-10"
+          style={{
+            maxWidth: '350px',
+            transition: 'all 0.3s ease-in-out',
+          }}
+        >
+          <ServiceInfo />
+          <button 
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowServiceInfo(false)}
+          >
+            ×
+          </button>
+        </div>
+      )}
     </DropdownProvider>
   );
 } 
