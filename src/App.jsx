@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
@@ -317,18 +317,6 @@ export default function App() {
       };
     }
   }, [isDragging]);
-
-  useEffect(() => {
-    const handleDocumentMouseUp = () => {
-      setIsDragging(false);
-    };
-    
-    document.addEventListener('mouseup', handleDocumentMouseUp);
-    
-    return () => {
-      document.removeEventListener('mouseup', handleDocumentMouseUp);
-    };
-  }, []);
 
   if (error) {
     return (
