@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Panel, DropdownProvider } from '@/components/Panel';
 import { initGoogleApi } from '@/services/googleApi';
 import { Sidebar } from '@/components/Sidebar.tsx'
+import { ServiceInfo } from '@/components/ServiceInfo';
+import { ExternalLink } from 'lucide-react';
 
 // First define the constants
 const PANEL_DIMENSIONS = {
@@ -30,6 +32,7 @@ export default function App() {
     'right-top': 'outline',
     'right-bottom': 'resources'
   });
+  const [showServiceInfo, setShowServiceInfo] = useState(false);
 
   // Define preset layouts with exact positioning
   const LAYOUTS = {
@@ -254,9 +257,10 @@ export default function App() {
   };
 
   const handleMouseDown = (e, type) => {
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setIsDragging(true);
+    e.preventDefault();
     setDraggedPanel(type);
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
     setDragPosition({ x: 0, y: 0 });
   };
 
@@ -296,15 +300,21 @@ export default function App() {
   };
 
   const handleMouseUp = () => {
-    if (isDragging && dropTarget) {
-      // Apply the position change before clearing states
-      handlePanelMove(draggedPanel, dropTarget);
+    if (isDragging) {
+      setIsDragging(false);
+      setDraggedPanel(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
     }
-    setIsDragging(false);
-    setDragPosition({ x: 0, y: 0 });
-    setDragStart(null);
-    setDraggedPanel(null);
-    setDropTarget(null);
+  };
+
+  const handleDocumentMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      setDraggedPanel(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    }
   };
 
   useEffect(() => {
@@ -317,6 +327,18 @@ export default function App() {
       };
     }
   }, [isDragging]);
+
+  useEffect(() => {
+    const handleDocumentMouseUp = () => {
+      setIsDragging(false);
+    };
+    
+    document.addEventListener('mouseup', handleDocumentMouseUp);
+    
+    return () => {
+      document.removeEventListener('mouseup', handleDocumentMouseUp);
+    };
+  }, []);
 
   if (error) {
     return (
@@ -421,6 +443,63 @@ export default function App() {
           </div>
         </div>
       </div>
+      <button 
+        onClick={() => setShowServiceInfo(true)}
+        className="info-button p-2 bg-slate-800 hover:bg-slate-700 rounded text-white"
+      >
+        About & Services
+      </button>
+      {showServiceInfo && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000]">
+          <div className="relative max-w-md w-full m-4">
+            <ServiceInfo />
+            <button 
+              onClick={() => setShowServiceInfo(false)}
+              className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 rounded-full p-1"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </DropdownProvider>
+  );
+}
+
+function InfoLinks({ onClose }) {
+  return (
+    <div className="p-4 bg-background border border-slate-700 rounded-lg">
+      <h2 className="text-2xl font-bold mb-4">Info Links</h2>
+      <div className="mt-4 pt-3 border-t border-slate-700">
+        <h3 className="text-lg font-medium mb-2 text-white">My Services</h3>
+        <ul className="text-sm space-y-2 text-gray-300 mb-4">
+          <li>✓ Custom workflow templates</li>
+          <li>✓ Advanced AI integration</li>
+          <li>✓ Team collaboration</li>
+        </ul>
+        
+        <a 
+          href="YOUR_PORTFOLIO_URL" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center text-blue-400 hover:text-blue-300 mb-2"
+        >
+          <ExternalLink className="mr-2 h-4 w-4" />
+          My Portfolio
+        </a>
+        
+        <a 
+          href="YOUR_LINKEDIN_URL" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center text-blue-400 hover:text-blue-300"
+        >
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+          </svg>
+          LinkedIn
+        </a>
+      </div>
+    </div>
   );
 } 
